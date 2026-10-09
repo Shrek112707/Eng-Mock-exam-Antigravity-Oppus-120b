@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Structures Quiz</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --fg: #111111;
+            --muted: #888888;
+            --border: #eaeaea;
+            --border-hover: #cccccc;
+            --active-bg: #fafafa;
+            --correct-bg: #f0fdf4;
+            --correct-border: #22c55e;
+            --correct-fg: #15803d;
+            --wrong-bg: #fef2f2;
+            --wrong-border: #ef4444;
+            --wrong-fg: #b91c1c;
+            --radius: 8px;
+        }
+
+        body.dark-mode {
+            --bg: #0a0a0a;
+            --fg: #ededed;
+            --muted: #a1a1aa;
+            --border: #27272a;
+            --border-hover: #3f3f46;
+            --active-bg: #18181b;
+            --correct-bg: #064e3b;
+            --correct-border: #059669;
+            --correct-fg: #34d399;
+            --wrong-bg: #450a0a;
+            --wrong-border: #ef4444;
+            --wrong-fg: #f87171;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--fg);
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .nav {
+            position: sticky;
+            top: 0;
+            background: color-mix(in srgb, var(--bg) 80%, transparent);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 10;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .nav h1 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: none;
+            color: var(--fg);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        
+        .theme-toggle:active {
+            transform: scale(0.9);
+        }
+
+        .content {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 48px 24px 96px;
+        }
+
+        .question-block {
+            margin-bottom: 48px;
+        }
+
+        .question-text {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 24px;
+            letter-spacing: -0.01em;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            background: transparent;
+        }
+
+        .option:hover {
+            border-color: var(--border-hover);
+            background: var(--active-bg);
+        }
+
+        .option:has(input:checked) {
+            border-color: var(--fg);
+            border-width: 2px;
+            padding: 15px; /* Offset to prevent layout shift */
+            background: var(--active-bg);
+        }
+
+        .option input {
+            display: none;
+        }
+
+        .option-letter {
+            color: var(--muted);
+            font-weight: 500;
+            width: 32px;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .option:has(input:checked) .option-letter {
+            color: var(--fg);
+        }
+
+        .option-text {
+            font-size: 15px;
+        }
+
+        .option-icon {
+            margin-left: auto;
+            font-size: 16px;
+            display: none;
+            font-weight: 600;
+        }
+
+        /* Post-submission states */
+        .submitted .option {
+            pointer-events: none; /* Disable clicks */
+        }
+
+        .option.correct {
+            border-color: var(--correct-border) !important;
+            background: var(--correct-bg) !important;
+            border-width: 2px;
+            padding: 15px;
+        }
+        
+        .option.correct .option-text, .option.correct .option-letter {
+            color: var(--correct-fg) !important;
+        }
+
+        .option.correct .option-icon {
+            display: block;
+            color: var(--correct-fg);
+        }
+
+        .option.wrong {
+            border-color: var(--wrong-border) !important;
+            background: var(--wrong-bg) !important;
+            border-width: 2px;
+            padding: 15px;
+        }
+        
+        .option.wrong .option-text, .option.wrong .option-letter {
+            color: var(--wrong-fg) !important;
+        }
+
+        .option.wrong .option-icon {
+            display: block;
+            color: var(--wrong-fg);
+        }
+
+        .footer {
+            margin-top: 64px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 0 20px;
+            height: 40px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: var(--fg);
+            color: var(--bg);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--fg);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--active-bg);
+            border-color: var(--border-hover);
+        }
+
+        .score-display {
+            font-size: 16px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+        
+        @media (max-width: 600px) {
+            .footer { flex-direction: column; align-items: stretch; }
+            .score-display { margin-left: 0; text-align: center; margin-top: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="nav">
+        <h1>Structures of English Quiz</h1>
+        <button id="theme-toggle" class="theme-toggle" onclick="toggleDarkMode()">🌙</button>
+    </nav>
+
+    <div class="content">
+        <div id="quiz-container"></div>
+        
+        <div class="footer">
+            <button class="btn btn-primary" onclick="submitQuiz()">Submit Answers</button>
+            <button class="btn btn-secondary" onclick="reshuffleQuiz()">Reshuffle</button>
+            <div id="score-display" class="score-display"></div>
+        </div>
+    </div>
+
+<script>
+    const quizData = [
+        // Word Formation
+        { q: "Everyday, new words enter our minds and language. Speaking a language means knowing the words and the ______ of these words.", options: ["spelling", "existence", "translation", "history"], a: 1 },
+        { q: "How many Filipino words were added to the Oxford English Dictionary in March 2025 according to the Inquirer article?", options: ["11", "15", "10", "12"], a: 0 },
+        { q: "According to the data on word creation, who contributed 630 words such as 'enjoyable' and 'terrific'?", options: ["Shakespeare", "Ben Johnson", "John Donne", "John Milton"], a: 3 },
+        { q: "Which author contributed 229 words including 'admirable' and 'lonely'?", options: ["John Milton", "Ben Johnson", "John Donne", "Shakespeare"], a: 3 },
+        { q: "The word-formation process of adding a prefix or suffix to an existing word is called:", options: ["Derivation", "Clipping", "Blending", "Back Formation"], a: 0 },
+        { q: "Extracting the actual or supposed affixes from another word (e.g., 'sculpt' from 'sculptor') is called:", options: ["Compounding", "Repurposing", "Back Formation", "Conversion"], a: 2 },
+        { q: "A word formed by joining or combining two or more words (e.g., 'carbon dating') is called:", options: ["Blending", "Compounding", "Derivation", "Acronyms"], a: 1 },
+        { q: "Taking a word from one context and applying it in another context (e.g., 'cool' for temperature and expression) is:", options: ["Conversion", "Repurposing", "Borrowing", "Eponyms"], a: 1 },
+        { q: "Translating one word class to another by taking a word, such as using 'friend' as a verb, is called:", options: ["Conversion", "Back Formation", "Repurposing", "Blending"], a: 0 },
+        { q: "Words named after a person, such as 'Alzheimer's disease,' are called:", options: ["Eponyms", "Acronyms", "Loan Words", "Onomatopoeia"], a: 0 },
+        { q: "The creation of a word by imitating its sound (e.g., 'boom', 'swoosh') is:", options: ["Reduplication", "Eponyms", "Onomatopoeia", "Blending"], a: 2 },
+        { q: "Reducing or shortening a word without changing its exact meaning is called:", options: ["Clipping", "Abbreviation", "Back Formation", "Syncope"], a: 0 },
+        { q: "Apocopation is a type of clipping that removes the _____ part of a word.", options: ["beginning", "middle", "end", "multiple"], a: 2 },
+        { q: "Combining the parts of two or more words to form a new word (e.g., 'brunch') is called:", options: ["Compounding", "Blending", "Clipping", "Derivation"], a: 1 },
+        { q: "Aphaeresis is a type of clipping that removes the _____ part of a word (e.g., 'phone').", options: ["beginning", "middle", "end", "multiple"], a: 0 },
+        { q: "A widely used word-formation method used to shorten a word or phrase, such as 'Jr.' for Junior, is:", options: ["Acronym", "Abbreviation", "Clipping", "Borrowing"], a: 1 },
+        { q: "When initials are pronounced as a word (e.g., 'AIDS' or 'AWOL'), it is called:", options: ["Acronym", "Abbreviation", "Blending", "Initialism"], a: 0 },
+        { q: "A word borrowed directly from another language, like 'pizza' or 'sushi', is known as:", options: ["Borrowing (Loan word)", "Conversion", "Repurposing", "Eponym"], a: 0 },
+        { q: "The repetition or near-repetition of words or sounds, like 'goody-goody' or 'zigzag', is:", options: ["Onomatopoeia", "Reduplication", "Compounding", "Blending"], a: 1 },
+        { q: "In Gen Z slang, the word 'FOMO' is formed through which process?", options: ["Compounding", "Clipping", "Initialism", "Borrowing"], a: 2 },
+
+        // Grammatical Categories - Nouns
+        { q: "A grammatical category that refers to names of a person, place, thing, or idea is a:", options: ["Verb", "Adjective", "Noun", "Pronoun"], a: 2 },
+        { q: "Which noun class refers to specific names and is always capitalized?", options: ["Proper Noun", "Common Noun", "Abstract Noun", "Collective Noun"], a: 0 },
+        { q: "'A team of players' or 'A swarm of bees' are examples of which type of noun?", options: ["Concrete Noun", "Abstract Noun", "Collective Noun", "Compound Noun"], a: 2 },
+        { q: "A noun that points to a physical object and can be perceived by the five senses is a:", options: ["Concrete Noun", "Abstract Noun", "Collective Noun", "Common Noun"], a: 0 },
+        { q: "An idea or concept that does not exist in the real world and cannot be touched is an:", options: ["Concrete Noun", "Abstract Noun", "Compound Noun", "Countable Noun"], a: 1 },
+        { q: "'Rainfall' and 'sunflower' are examples of what type of compound noun?", options: ["Open", "Hyphenated", "Closed or solid", "Spaced"], a: 2 },
+        { q: "The compound noun 'mother-in-law' is formed by which combination?", options: ["Noun + Verb", "Noun + Preposition + Noun", "Adjective + Noun", "Preposition + Noun"], a: 1 },
+        { q: "Forming new words by adding a word to the base form (from Latin 'inflectere' meaning to bend) is called:", options: ["Deflection", "Inflection", "Declension", "Derivation"], a: 1 },
+        { q: "Most words that are inflected to reflect tense, mood, aspect, and person are:", options: ["Nouns", "Adjectives", "Verbs", "Pronouns"], a: 2 },
+        { q: "The changing form of a noun or pronoun in English to show number, case, or gender is called:", options: ["Inflection", "Declension", "Conversion", "Modification"], a: 1 },
+        { q: "A property of nouns that classifies them according to sex or whether they are animate/inanimate is:", options: ["Gender", "Case", "Number", "Degree"], a: 0 },
+        { q: "Which case refers to a noun used as the subject of the verb?", options: ["Nominative Case", "Dative Case", "Objective Case", "Possessive Case"], a: 0 },
+        { q: "If a noun receives something or indicates to whom/for whom an action is performed, it is in the:", options: ["Nominative Case", "Dative Case (Indirect Object)", "Objective Case", "Appositive"], a: 1 },
+        { q: "When a noun functions as an object of a verb or preposition (e.g., 'Bella ate an apple'), it is in the:", options: ["Possessive Case", "Accusative/Objective Case", "Predicate Nominative", "Direct Address"], a: 1 },
+        { q: "The case that shows ownership or possession, commonly marked by an apostrophe, is the:", options: ["Possessive Case", "Appositive", "Nominative Case", "Objective Case"], a: 0 },
+        { q: "A noun that follows a linking verb and renames or identifies the subject is a:", options: ["Direct Address", "Object of a Preposition", "Predicate Nominative", "Direct Object"], a: 2 },
+        { q: "A noun that explains, identifies, or renames another noun beside it (e.g., 'My godmother, Kath...') is an:", options: ["Appositive", "Objective Complement", "Predicate Adjective", "Attributive"], a: 0 },
+        { q: "In the sentence 'The book is on the table,' the word 'table' functions as:", options: ["Direct Object", "Object of a Preposition", "Indirect Object", "Appositive"], a: 1 },
+        { q: "A noun used to directly speak to a person or thing (e.g., 'Eli, please close the door.') is called:", options: ["Appositive", "Subject", "Direct Address", "Indirect Object"], a: 2 },
+        { q: "Singular nouns can be made plural by adding 's', 'es', 'ies', or 'ves'. This describes the noun property of:", options: ["Gender", "Case", "Number", "Inflection"], a: 2 },
+
+        // Adjectives
+        { q: "Words used to describe or modify nouns or other substantives are called:", options: ["Verbs", "Nouns", "Adjectives", "Pronouns"], a: 2 },
+        { q: "Adjectives that describe appearance, quality, shape, color, or behavior are classified as:", options: ["Limiting Adjectives", "Descriptive Adjectives", "Pronominal Adjectives", "Numerical Adjectives"], a: 1 },
+        { q: "An adjective formed from a proper noun, like 'Philippine eagle,' is a:", options: ["Common Adjective", "Limiting Adjective", "Proper Adjective", "Predicate Adjective"], a: 2 },
+        { q: "Verb forms that can act as descriptive adjectives (e.g., 'broken heart', 'shooting stars') are:", options: ["Gerunds", "Participles", "Infinitives", "Appositives"], a: 1 },
+        { q: "An adjective placed just before the word it modifies (e.g., 'beautiful dress') is an:", options: ["Attributive Adjective", "Appositive Adjective", "Predicate Adjective", "Objective Complement"], a: 0 },
+        { q: "Adjectives formed in pairs immediately following the word they modify, set off by commas, are:", options: ["Attributive Adjectives", "Predicate Adjectives", "Appositive Adjectives", "Limiting Adjectives"], a: 2 },
+        { q: "Adjectives used as subject complements after linking verbs (am, is, are, was, were) are:", options: ["Predicate Adjectives", "Objective Complements", "Attributive Adjectives", "Articles"], a: 0 },
+        { q: "An adjective that modifies the direct object of the verb (e.g., 'made the patient weak') is an:", options: ["Appositive Adjective", "Objective Complement", "Attributive Adjective", "Predicate Adjective"], a: 1 },
+        { q: "Adjectives that point out or denote the number of an object are called:", options: ["Descriptive Adjectives", "Limiting Adjectives", "Proper Adjectives", "Abstract Adjectives"], a: 1 },
+        { q: "'A', 'an', and 'the' are examples of which type of limiting adjective?", options: ["Numerical", "Articles", "Pronominal", "Possessive"], a: 1 },
+        { q: "Limiting adjectives that denote exact number, rank, or position (e.g., first, three) are:", options: ["Articles", "Numerical Adjectives", "Pronominal Adjectives", "Indefinite Adjectives"], a: 1 },
+        { q: "Personal pronouns in their possessive cases used as modifiers (e.g., 'My daughter') are:", options: ["Numerical Adjectives", "Pronominal Adjectives", "Proper Adjectives", "Articles"], a: 1 },
+        { q: "The degree of comparison that is just the description itself is the:", options: ["Positive degree", "Comparative degree", "Superlative degree", "Infinite degree"], a: 0 },
+        { q: "The degree of comparison used when two persons or things are compared is the:", options: ["Positive degree", "Comparative degree", "Superlative degree", "Extreme degree"], a: 1 },
+        { q: "The degree of comparison used when more than two are compared is the:", options: ["Positive degree", "Comparative degree", "Superlative degree", "Ultimate degree"], a: 2 },
+        { q: "Adjectives of three or more syllables form their comparative and superlative degrees by adding:", options: ["-er and -est", "more and most", "-ier and -iest", "less and least only"], a: 1 },
+        { q: "What is the comparative degree of the irregular adjective 'bad'?", options: ["badder", "baddest", "worse", "worst"], a: 2 },
+        { q: "What is the superlative degree of the irregular adjective 'far' (distance)?", options: ["farer", "farest", "farther", "farthest"], a: 3 },
+        { q: "Some adjectives do not have comparative degrees because their meaning is absolute. Which of the following is one?", options: ["hungry", "slow", "dead", "beautiful"], a: 2 },
+        { q: "In the order of descriptive adjectives in a series, which comes first?", options: ["Quality", "Size", "Shape", "Color"], a: 1 },
+
+        // Subject-Verb Agreement Rules
+        { q: "The fundamental rule of Subject-Verb Agreement is that subjects and verbs must always agree in:", options: ["Gender", "Case", "Number", "Tense"], a: 2 },
+        { q: "When two or more subjects are joined by 'and', what form should the verb generally take?", options: ["A verb form ending in 's'", "A verb form without an 's'", "Past tense only", "A gerund form"], a: 1 },
+        { q: "When a subject is modified by the words 'each' or 'every', which of the following is true?", options: ["It takes a singular verb", "It takes a plural verb without an 's'", "It requires a gerund", "The verb form depends on the closest subject"], a: 0 },
+        { q: "When plural subjects are joined by 'or', 'nor', or 'but', how is the verb's form determined?", options: ["It is always plural", "It always takes an 's'", "It agrees with the subject closest to it", "It agrees with the first subject in the sentence"], a: 2 },
+        { q: "How should verbs agree with indefinite pronouns like 'everyone' or 'everything'?", options: ["They take a plural verb", "They take a singular verb", "They require past tense", "It depends on the prepositional phrase"], a: 1 },
+        { q: "To find the proper subject of a verb, you must remember that the subject is never located in a:", options: ["dependent clause", "prepositional or verbal phrase", "independent clause", "direct quotation"], a: 1 },
+        { q: "For indefinite pronouns related to amount (all, half, some, none), how do you determine whether the verb should be singular or plural?", options: ["They are always singular", "They are always plural", "By looking at the object of the prepositional phrase", "By looking at the main verb's tense"], a: 2 },
+        { q: "If a collective noun like 'family' or 'team' is used as the subject, what form does the verb typically take?", options: ["Singular form (ending in 's')", "Plural form (without an 's')", "Gerund form", "Infinitive form"], a: 0 },
+        { q: "How are nouns like 'economics', 'mumps', or 'news' treated in subject-verb agreement?", options: ["As plural subjects", "As singular subjects", "As uncountable plurals", "As collective nouns"], a: 1 },
+        { q: "When the subject refers to a unit of measurement (time, distance, money), the verb should be:", options: ["Plural", "Singular", "Infinite", "Compound"], a: 1 },
+        { q: "In sentences that begin with 'there' or 'here', where is the subject usually located?", options: ["At the very beginning", "Inside a prepositional phrase", "After the verb", "At the very end of the sentence"], a: 2 },
+        { q: "When gerunds ('ing' words) are used as subjects, they are treated as:", options: ["Plural subjects", "Singular subjects", "Adjectives", "Verbs"], a: 1 },
+        { q: "When using relative pronouns (who, that, which) as a subject, what determines if the verb should be singular or plural?", options: ["The verb itself", "The noun the pronoun refers to", "The preposition", "The sentence structure"], a: 1 },
+        { q: "The phrase 'The number' followed by a prepositional phrase requires what kind of verb?", options: ["Plural verb", "Singular verb", "Future tense verb", "Past tense verb"], a: 1 },
+        { q: "The phrase 'A number' followed by a prepositional phrase requires what kind of verb?", options: ["Plural verb", "Singular verb", "Future tense verb", "Past tense verb"], a: 0 },
+        { q: "Which of the following sentences is grammatically correct?", options: ["Jan, John, and Bob walks to the store.", "Jan, John, and Bob walk to the store.", "Jan and Bob is walking.", "John and Bob has walked."], a: 1 },
+        { q: "Which of the following sentences is grammatically correct?", options: ["Every flower bloom beautifully.", "Each boy and girl walk to the store.", "Every flower blooms beautifully.", "Each of the boys run."], a: 2 },
+        { q: "Which of the following sentences is grammatically correct?", options: ["Neither Bob nor his friends walks to the store.", "Either Andrew or his friend walk to the store.", "Neither Bob nor his friends walk to the store.", "Either the boys or the girl walk to the store."], a: 2 },
+        { q: "Which of the following sentences is grammatically correct?", options: ["The news surprise everyone.", "Economics are her favorite subject.", "Economics is her favorite subject.", "Mumps are a dangerous disease."], a: 2 },
+        { q: "Which of the following sentences is grammatically correct?", options: ["Ten pounds of chocolate are too much.", "Thirteen feet of kite string tangle easily.", "Ten pounds of chocolate is too much.", "Fifty dollars are a lot of money."], a: 2 }
+    ];
+
+    let questionOrder = Array.from({length: 80}, (_, i) => i + 1);
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function renderQuiz() {
+        let quizContainer = document.getElementById('quiz-container');
+        quizContainer.innerHTML = '';
+        quizContainer.classList.remove('submitted');
+        
+        for (let i = 0; i < questionOrder.length; i++) {
+            let qNum = questionOrder[i];
+            let displayNum = i + 1;
+            let qData = quizData[qNum - 1]; 
+            
+            if (qData) {
+                let qHTML = `<div class="question-block" id="qb-${qNum}">`;
+                qHTML += `<div class="question-text">${displayNum}. ${qData.q}</div>`;
+                
+                let optionsHTML = `<div class="options">`;
+                const labels = ["A", "B", "C", "D"];
+                for(let j = 0; j < qData.options.length; j++) {
+                    optionsHTML += `
+                        <label class="option" id="label-q${qNum}-opt${j}">
+                            <input type="radio" name="q${qNum}" value="${j}">
+                            <span class="option-letter">${labels[j]}</span>
+                            <span class="option-text">${qData.options[j]}</span>
+                            <span class="option-icon" id="icon-q${qNum}-opt${j}"></span>
+                        </label>
+                    `;
+                }
+                optionsHTML += `</div>`;
+                qHTML += optionsHTML;
+                qHTML += `<input type="hidden" id="a${qNum}" value="${qData.a}">`;
+                qHTML += `</div>`;
+                quizContainer.innerHTML += qHTML;
+            }
+        }
+        document.getElementById('score-display').innerText = '';
+    }
+
+    function reshuffleQuiz() {
+        shuffleArray(questionOrder);
+        renderQuiz();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function submitQuiz() {
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+        
+        // Prevent double submit clicking
+        if (container.classList.contains('submitted')) return;
+        
+        container.classList.add('submitted');
+
+        for (let i = 0; i < questionOrder.length; i++) {
+            let qNum = questionOrder[i];
+            let correctAnswerIndex = document.getElementById('a' + qNum).value;
+            let selectedOption = document.querySelector(`input[name="q${qNum}"]:checked`);
+            
+            let correctLabel = document.getElementById(`label-q${qNum}-opt${correctAnswerIndex}`);
+            let correctIcon = document.getElementById(`icon-q${qNum}-opt${correctAnswerIndex}`);
+            
+            if (selectedOption) {
+                let selectedIndex = selectedOption.value;
+                let selectedLabel = document.getElementById(`label-q${qNum}-opt${selectedIndex}`);
+                let selectedIcon = document.getElementById(`icon-q${qNum}-opt${selectedIndex}`);
+                
+                if (selectedIndex === correctAnswerIndex) {
+                    score++;
+                    selectedLabel.classList.add('correct');
+                    selectedIcon.innerText = '✓';
+                } else {
+                    selectedLabel.classList.add('wrong');
+                    selectedIcon.innerText = '✕';
+                    
+                    correctLabel.classList.add('correct');
+                    correctIcon.innerText = '✓';
+                }
+            } else {
+                // Not answered
+                correctLabel.classList.add('correct');
+                correctIcon.innerText = '✓';
+            }
+        }
+        
+        document.getElementById('score-display').innerText = `Score: ${score} / 80`;
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const themeToggle = document.getElementById('theme-toggle');
+        
+        if (document.body.classList.contains('dark-mode')) {
+            themeToggle.innerHTML = '☀️';
+        } else {
+            themeToggle.innerHTML = '🌙';
+        }
+    }
+
+    // Init
+    renderQuiz();
+</script>
+
+</body>
+</html>
