@@ -77,17 +77,24 @@
             background: transparent;
             border: none;
             color: var(--fg);
-            font-size: 20px;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            padding: 4px;
+            padding: 6px 10px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.2s;
+            gap: 6px;
+            transition: background 0.2s, transform 0.2s;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--active-bg);
         }
         
         .theme-toggle:active {
-            transform: scale(0.9);
+            transform: scale(0.95);
         }
 
         .content {
@@ -132,7 +139,7 @@
         .option:has(input:checked) {
             border-color: var(--fg);
             border-width: 2px;
-            padding: 15px;
+            padding: 15px; /* Offset to prevent layout shift */
             background: var(--active-bg);
         }
 
@@ -265,7 +272,7 @@
 
     <nav class="nav">
         <h1>Structures of English Quiz</h1>
-        <button id="theme-toggle" class="theme-toggle" onclick="toggleDarkMode()">🌙</button>
+        <button id="theme-toggle" class="theme-toggle" onclick="toggleDarkMode()">Toggle Dark Mode 🌙</button>
     </nav>
 
     <div class="content">
@@ -280,6 +287,7 @@
 
 <script>
     const quizData = [
+        // Word Formation
         { q: "Everyday, new words enter our minds and language. Speaking a language means knowing the words and the ______ of these words.", options: ["spelling", "existence", "translation", "history"], a: 1 },
         { q: "How many Filipino words were added to the Oxford English Dictionary in March 2025 according to the Inquirer article?", options: ["11", "15", "10", "12"], a: 0 },
         { q: "According to the data on word creation, who contributed 630 words such as 'enjoyable' and 'terrific'?", options: ["Shakespeare", "Ben Johnson", "John Donne", "John Milton"], a: 3 },
@@ -323,6 +331,7 @@
         { q: "A noun used to directly speak to a person or thing (e.g., 'Eli, please close the door.') is called:", options: ["Appositive", "Subject", "Direct Address", "Indirect Object"], a: 2 },
         { q: "Singular nouns can be made plural by adding 's', 'es', 'ies', or 'ves'. This describes the noun property of:", options: ["Gender", "Case", "Number", "Inflection"], a: 2 },
 
+        // Adjectives
         { q: "Words used to describe or modify nouns or other substantives are called:", options: ["Verbs", "Nouns", "Adjectives", "Pronouns"], a: 2 },
         { q: "Adjectives that describe appearance, quality, shape, color, or behavior are classified as:", options: ["Limiting Adjectives", "Descriptive Adjectives", "Pronominal Adjectives", "Numerical Adjectives"], a: 1 },
         { q: "An adjective formed from a proper noun, like 'Philippine eagle,' is a:", options: ["Common Adjective", "Limiting Adjective", "Proper Adjective", "Predicate Adjective"], a: 2 },
@@ -344,6 +353,7 @@
         { q: "Some adjectives do not have comparative degrees because their meaning is absolute. Which of the following is one?", options: ["hungry", "slow", "dead", "beautiful"], a: 2 },
         { q: "In the order of descriptive adjectives in a series, which comes first?", options: ["Quality", "Size", "Shape", "Color"], a: 1 },
 
+        // Subject-Verb Agreement Rules
         { q: "The fundamental rule of Subject-Verb Agreement is that subjects and verbs must always agree in:", options: ["Gender", "Case", "Number", "Tense"], a: 2 },
         { q: "When two or more subjects are joined by 'and', what form should the verb generally take?", options: ["A verb form ending in 's'", "A verb form without an 's'", "Past tense only", "A gerund form"], a: 1 },
         { q: "When a subject is modified by the words 'each' or 'every', which of the following is true?", options: ["It takes a singular verb", "It takes a plural verb without an 's'", "It requires a gerund", "The verb form depends on the closest subject"], a: 0 },
@@ -379,7 +389,7 @@
         let quizContainer = document.getElementById('quiz-container');
         quizContainer.classList.remove('submitted');
         
-        let allHTML = ''; 
+        let allHTML = ''; // Use an accumulator for performance
         
         for (let i = 0; i < questionOrder.length; i++) {
             let qNum = questionOrder[i];
@@ -411,6 +421,7 @@
             }
         }
         
+        // Single DOM update to prevent lag
         quizContainer.innerHTML = allHTML;
         document.getElementById('score-display').innerText = '';
     }
@@ -425,7 +436,7 @@
         let score = 0;
         const container = document.getElementById('quiz-container');
         
-    
+        // Prevent double submit clicking
         if (container.classList.contains('submitted')) return;
         
         container.classList.add('submitted');
@@ -455,6 +466,7 @@
                     correctIcon.innerText = '✓';
                 }
             } else {
+                // Not answered
                 correctLabel.classList.add('correct');
                 correctIcon.innerText = '✓';
             }
