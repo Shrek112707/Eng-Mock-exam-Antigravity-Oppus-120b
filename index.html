@@ -380,8 +380,9 @@
 
     function renderQuiz() {
         let quizContainer = document.getElementById('quiz-container');
-        quizContainer.innerHTML = '';
         quizContainer.classList.remove('submitted');
+        
+        let allHTML = ''; // Use an accumulator for performance
         
         for (let i = 0; i < questionOrder.length; i++) {
             let qNum = questionOrder[i];
@@ -408,9 +409,13 @@
                 qHTML += optionsHTML;
                 qHTML += `<input type="hidden" id="a${qNum}" value="${qData.a}">`;
                 qHTML += `</div>`;
-                quizContainer.innerHTML += qHTML;
+                
+                allHTML += qHTML;
             }
         }
+        
+        // Single DOM update to prevent lag
+        quizContainer.innerHTML = allHTML;
         document.getElementById('score-display').innerText = '';
     }
 
@@ -469,9 +474,11 @@
         const themeToggle = document.getElementById('theme-toggle');
         
         if (document.body.classList.contains('dark-mode')) {
-            themeToggle.innerHTML = '☀️';
+            themeToggle.innerHTML = ' Light mode ☀️';
+            themeToggle.setAttribute('title', 'Toggle Light Mode');
         } else {
-            themeToggle.innerHTML = '🌙';
+            themeToggle.innerHTML = 'Dark Mode 🌙';
+            themeToggle.setAttribute('title', 'Toggle Dark Mode');
         }
     }
 
