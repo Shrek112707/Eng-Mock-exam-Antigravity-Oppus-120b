@@ -73,6 +73,12 @@
             letter-spacing: -0.01em;
         }
 
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
         .theme-toggle {
             background: transparent;
             border: none;
@@ -172,7 +178,7 @@
 
         /* Post-submission states */
         .submitted .option {
-            pointer-events: none; /* Disable clicks */
+            pointer-events: none;
         }
 
         .option.correct {
@@ -232,6 +238,12 @@
             justify-content: center;
         }
 
+        .nav-btn {
+            height: 32px;
+            padding: 0 12px;
+            font-size: 13px;
+        }
+
         .btn:active {
             transform: scale(0.97);
         }
@@ -261,8 +273,94 @@
             font-weight: 600;
             margin-left: auto;
         }
+
+        /* --- Results Screen Animation --- */
+        #results-screen {
+            position: fixed;
+            inset: 0;
+            background: color-mix(in srgb, var(--bg) 95%, transparent);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
         
-        @media (max-width: 600px) {
+        #results-screen.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #results-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: scale(0.85) translateY(20px);
+            opacity: 0;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
+        }
+
+        #results-screen.show #results-content {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+            transition-delay: 0.1s; /* Let background fade slightly first */
+        }
+
+        .circular-chart {
+            display: block;
+            margin: 0 auto;
+            width: 250px;
+            height: 250px;
+        }
+
+        .circle-bg {
+            fill: none;
+            stroke: var(--border);
+            stroke-width: 2;
+        }
+
+        .circle {
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            /* Cubic bezier ease-out for the circle stroke animation */
+            transition: stroke-dasharray 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .circle.pass { stroke: var(--correct-border); }
+        .circle.fail { stroke: var(--wrong-border); }
+
+        .percentage {
+            fill: var(--fg);
+            font-family: inherit;
+            font-size: 6px;
+            text-anchor: middle;
+            font-weight: 600;
+        }
+
+        #score-message {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 24px 0 32px;
+            color: var(--fg);
+            text-align: center;
+        }
+        
+        @media (max-width: 650px) {
+            .nav {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .nav-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
             .footer { flex-direction: column; align-items: stretch; }
             .score-display { margin-left: 0; text-align: center; margin-top: 8px; }
         }
@@ -272,16 +370,41 @@
 
     <nav class="nav">
         <h1>Structures of English Quiz</h1>
-        <button id="theme-toggle" class="theme-toggle" onclick="toggleDarkMode()">Toggle Dark Mode 🌙</button>
+        <div class="nav-actions">
+            <button class="btn btn-secondary nav-btn" onclick="reshuffleQuiz()">Reshuffle</button>
+            <button id="theme-toggle" class="theme-toggle" onclick="toggleDarkMode()">Toggle Dark Mode 🌙</button>
+        </div>
     </nav>
 
     <div class="content">
         <div id="quiz-container"></div>
         
         <div class="footer">
-            <button class="btn btn-primary" onclick="submitQuiz()">Submit Answers</button>
-            <button class="btn btn-secondary" onclick="reshuffleQuiz()">Reshuffle</button>
+            <button id="submit-btn" class="btn btn-primary" onclick="submitQuiz()">Submit Answers</button>
             <div id="score-display" class="score-display"></div>
+        </div>
+    </div>
+
+    <!-- Animated Results Overlay -->
+    <div id="results-screen">
+        <div id="results-content">
+            <svg viewBox="0 0 36 36" class="circular-chart">
+                <path class="circle-bg"
+                    d="M18 2.0845
+                    a 15.9155 15.9155 0 0 1 0 31.831
+                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <path class="circle"
+                    stroke-dasharray="0, 100"
+                    id="score-path"
+                    d="M18 2.0845
+                    a 15.9155 15.9155 0 0 1 0 31.831
+                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <text x="18" y="20.35" class="percentage" id="score-text">0 / 80</text>
+            </svg>
+            <h2 id="score-message">Message</h2>
+            <button class="btn btn-secondary" onclick="reviewAnswers()">Review Answers</button>
         </div>
     </div>
 
@@ -389,7 +512,7 @@
         let quizContainer = document.getElementById('quiz-container');
         quizContainer.classList.remove('submitted');
         
-        let allHTML = ''; // Use an accumulator for performance
+        let allHTML = ''; 
         
         for (let i = 0; i < questionOrder.length; i++) {
             let qNum = questionOrder[i];
@@ -421,9 +544,9 @@
             }
         }
         
-        // Single DOM update to prevent lag
         quizContainer.innerHTML = allHTML;
         document.getElementById('score-display').innerText = '';
+        document.getElementById('submit-btn').style.display = 'inline-flex';
     }
 
     function reshuffleQuiz() {
@@ -432,14 +555,15 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    let finalScore = 0;
+
     function submitQuiz() {
-        let score = 0;
         const container = document.getElementById('quiz-container');
         
-        // Prevent double submit clicking
         if (container.classList.contains('submitted')) return;
         
         container.classList.add('submitted');
+        finalScore = 0;
 
         for (let i = 0; i < questionOrder.length; i++) {
             let qNum = questionOrder[i];
@@ -455,25 +579,81 @@
                 let selectedIcon = document.getElementById(`icon-q${qNum}-opt${selectedIndex}`);
                 
                 if (selectedIndex === correctAnswerIndex) {
-                    score++;
+                    finalScore++;
                     selectedLabel.classList.add('correct');
                     selectedIcon.innerText = '✓';
                 } else {
                     selectedLabel.classList.add('wrong');
                     selectedIcon.innerText = '✕';
-                    
                     correctLabel.classList.add('correct');
                     correctIcon.innerText = '✓';
                 }
             } else {
-                // Not answered
                 correctLabel.classList.add('correct');
                 correctIcon.innerText = '✓';
             }
         }
         
-        document.getElementById('score-display').innerText = `Score: ${score} / 80`;
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        // Hide Submit button and show Score in footer
+        document.getElementById('submit-btn').style.display = 'none';
+        document.getElementById('score-display').innerText = `Final Score: ${finalScore} / 80`;
+
+        // Trigger Results Screen Animation
+        const percentage = (finalScore / 80) * 100;
+        const resultsScreen = document.getElementById('results-screen');
+        const scorePath = document.getElementById('score-path');
+        const scoreText = document.getElementById('score-text');
+        const scoreMessage = document.getElementById('score-message');
+        
+        // Reset state
+        scorePath.setAttribute('stroke-dasharray', `0, 100`);
+        scoreText.textContent = `0 / 80`;
+        resultsScreen.classList.add('show');
+        
+        if (finalScore >= 40) {
+            scoreMessage.innerText = "Di kana tres!";
+            scorePath.classList.add('pass');
+            scorePath.classList.remove('fail');
+        } else {
+            scoreMessage.innerText = "Really bro?";
+            scorePath.classList.add('fail');
+            scorePath.classList.remove('pass');
+        }
+
+        setTimeout(() => {
+            // Animate SVG stroke
+            scorePath.setAttribute('stroke-dasharray', `${percentage}, 100`);
+            
+            // Advanced requestAnimationFrame easing for perfect number sync
+            const duration = 1500;
+            const startTimestamp = performance.now();
+            
+            const animateNumber = (timestamp) => {
+                const elapsed = timestamp - startTimestamp;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // EaseOut cubic formula to match CSS cubic-bezier roughly
+                const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+                const currentScore = Math.floor(easeOut(progress) * finalScore);
+                
+                scoreText.textContent = `${currentScore} / 80`;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateNumber);
+                } else {
+                    scoreText.textContent = `${finalScore} / 80`;
+                }
+            };
+            
+            if (finalScore > 0) {
+                requestAnimationFrame(animateNumber);
+            }
+        }, 300);
+    }
+
+    function reviewAnswers() {
+        document.getElementById('results-screen').classList.remove('show');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function toggleDarkMode() {
