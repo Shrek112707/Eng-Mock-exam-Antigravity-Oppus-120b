@@ -176,7 +176,7 @@
             font-weight: 600;
         }
 
-        /* Post-submission states */
+        /* Post-submission & reveal states */
         .submitted .option {
             pointer-events: none;
         }
@@ -211,6 +211,13 @@
         .option.wrong .option-icon {
             display: block;
             color: var(--wrong-fg);
+        }
+
+        .option.revealed-correct {
+            border-color: #3b82f6 !important;
+            background: rgba(59, 130, 246, 0.1) !important;
+            border-width: 2px;
+            padding: 15px;
         }
 
         .footer {
@@ -274,6 +281,134 @@
             margin-left: auto;
         }
 
+        /* --- Console UI --- */
+        #console-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 350px;
+            height: 100vh;
+            background-color: #121212;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            z-index: 9999;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 15px rgba(0,0,0,0.5);
+        }
+        
+        #console-panel.open {
+            transform: translateX(0);
+        }
+
+        #console-toggle {
+            position: absolute;
+            top: 50%;
+            left: -40px;
+            width: 40px;
+            height: 60px;
+            background-color: #121212;
+            color: #00ff00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 8px 0 0 8px;
+            font-weight: bold;
+            font-size: 20px;
+            transform: translateY(-50%);
+            box-shadow: -2px 0 5px rgba(0,0,0,0.3);
+            user-select: none;
+            border: 1px solid #333;
+            border-right: none;
+        }
+
+        #console-output {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        #console-input-container {
+            padding: 12px;
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            background: #0a0a0a;
+            position: relative;
+        }
+
+        #console-input-container span {
+            margin-right: 8px;
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        #console-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+        }
+
+        /* --- Command autocomplete --- */
+        #cmd-suggest {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 100%;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-bottom: none;
+            max-height: 180px;
+            overflow-y: auto;
+            display: none;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+        }
+        .cmd-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 6px 12px;
+            color: #00ff00;
+            cursor: pointer;
+        }
+        .cmd-item small { color: #777; }
+        .cmd-item.active { background: #00ff00; color: #000; }
+        .cmd-item.active small { color: #333; }
+
+        .log-entry { word-break: break-word; line-height: 1.4; }
+        .log-command { color: #aaaaaa; }
+        .log-error { color: #ff5555; }
+        .log-success { color: #55ff55; }
+        .log-system { color: #facc15; }
+
+        /* Timer UI */
+        #timer-display {
+            font-weight: 700;
+            color: var(--wrong-border);
+            font-variant-numeric: tabular-nums;
+            font-size: 16px;
+            background: var(--wrong-bg);
+            padding: 4px 10px;
+            border-radius: 6px;
+            display: none;
+        }
+        #timer-display.active {
+            display: inline-flex;
+            align-items: center;
+        }
+
         /* --- Results Screen Animation --- */
         #results-screen {
             position: fixed;
@@ -281,7 +416,7 @@
             background: color-mix(in srgb, var(--bg) 95%, transparent);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            z-index: 9999;
+            z-index: 10000;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -308,7 +443,7 @@
         #results-screen.show #results-content {
             transform: scale(1) translateY(0);
             opacity: 1;
-            transition-delay: 0.1s; /* Let background fade slightly first */
+            transition-delay: 0.1s;
         }
 
         .circular-chart {
@@ -328,7 +463,6 @@
             fill: none;
             stroke-width: 2.5;
             stroke-linecap: round;
-            /* Cubic bezier ease-out for the circle stroke animation */
             transition: stroke-dasharray 1.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
@@ -363,6 +497,7 @@
             }
             .footer { flex-direction: column; align-items: stretch; }
             .score-display { margin-left: 0; text-align: center; margin-top: 8px; }
+            #console-panel { width: 85%; }
         }
     </style>
 </head>
@@ -371,6 +506,7 @@
     <nav class="nav">
         <h1>Structures of English Quiz</h1>
         <div class="nav-actions">
+            <span id="timer-display"></span>
             <button class="btn btn-secondary nav-btn" onclick="reshuffleQuiz()">Reshuffle</button>
             <button id="theme-toggle" class="theme-toggle" onclick="toggleDarkMode()">Toggle Dark Mode 🌙</button>
         </div>
@@ -382,6 +518,16 @@
         <div class="footer">
             <button id="submit-btn" class="btn btn-primary" onclick="submitQuiz()">Submit Answers</button>
             <div id="score-display" class="score-display"></div>
+        </div>
+    </div>
+
+    <!-- Console Panel -->
+    <div id="console-panel">
+        <div id="console-toggle" onclick="toggleConsole()">⟨</div>
+        <div id="console-output"></div>
+        <div id="console-input-container">
+            <span>></span>
+            <input type="text" id="console-input" placeholder="Type command..." autocomplete="off">
         </div>
     </div>
 
@@ -401,7 +547,7 @@
                     a 15.9155 15.9155 0 0 1 0 31.831
                     a 15.9155 15.9155 0 0 1 0 -31.831"
                 />
-                <text x="18" y="20.35" class="percentage" id="score-text">0 / 80</text>
+                <text x="18" y="20.35" class="percentage" id="score-text">0 / 0</text>
             </svg>
             <h2 id="score-message">Message</h2>
             <button class="btn btn-secondary" onclick="reviewAnswers()">Review Answers</button>
@@ -410,96 +556,96 @@
 
 <script>
     const quizData = [
-        // Word Formation
-        { q: "Everyday, new words enter our minds and language. Speaking a language means knowing the words and the ______ of these words.", options: ["spelling", "existence", "translation", "history"], a: 1 },
-        { q: "How many Filipino words were added to the Oxford English Dictionary in March 2025 according to the Inquirer article?", options: ["11", "15", "10", "12"], a: 0 },
-        { q: "According to the data on word creation, who contributed 630 words such as 'enjoyable' and 'terrific'?", options: ["Shakespeare", "Ben Johnson", "John Donne", "John Milton"], a: 3 },
-        { q: "Which author contributed 229 words including 'admirable' and 'lonely'?", options: ["John Milton", "Ben Johnson", "John Donne", "Shakespeare"], a: 3 },
-        { q: "The word-formation process of adding a prefix or suffix to an existing word is called:", options: ["Derivation", "Clipping", "Blending", "Back Formation"], a: 0 },
-        { q: "Extracting the actual or supposed affixes from another word (e.g., 'sculpt' from 'sculptor') is called:", options: ["Compounding", "Repurposing", "Back Formation", "Conversion"], a: 2 },
-        { q: "A word formed by joining or combining two or more words (e.g., 'carbon dating') is called:", options: ["Blending", "Compounding", "Derivation", "Acronyms"], a: 1 },
-        { q: "Taking a word from one context and applying it in another context (e.g., 'cool' for temperature and expression) is:", options: ["Conversion", "Repurposing", "Borrowing", "Eponyms"], a: 1 },
-        { q: "Translating one word class to another by taking a word, such as using 'friend' as a verb, is called:", options: ["Conversion", "Back Formation", "Repurposing", "Blending"], a: 0 },
-        { q: "Words named after a person, such as 'Alzheimer's disease,' are called:", options: ["Eponyms", "Acronyms", "Loan Words", "Onomatopoeia"], a: 0 },
-        { q: "The creation of a word by imitating its sound (e.g., 'boom', 'swoosh') is:", options: ["Reduplication", "Eponyms", "Onomatopoeia", "Blending"], a: 2 },
-        { q: "Reducing or shortening a word without changing its exact meaning is called:", options: ["Clipping", "Abbreviation", "Back Formation", "Syncope"], a: 0 },
-        { q: "Apocopation is a type of clipping that removes the _____ part of a word.", options: ["beginning", "middle", "end", "multiple"], a: 2 },
-        { q: "Combining the parts of two or more words to form a new word (e.g., 'brunch') is called:", options: ["Compounding", "Blending", "Clipping", "Derivation"], a: 1 },
-        { q: "Aphaeresis is a type of clipping that removes the _____ part of a word (e.g., 'phone').", options: ["beginning", "middle", "end", "multiple"], a: 0 },
-        { q: "A widely used word-formation method used to shorten a word or phrase, such as 'Jr.' for Junior, is:", options: ["Acronym", "Abbreviation", "Clipping", "Borrowing"], a: 1 },
-        { q: "When initials are pronounced as a word (e.g., 'AIDS' or 'AWOL'), it is called:", options: ["Acronym", "Abbreviation", "Blending", "Initialism"], a: 0 },
-        { q: "A word borrowed directly from another language, like 'pizza' or 'sushi', is known as:", options: ["Borrowing (Loan word)", "Conversion", "Repurposing", "Eponym"], a: 0 },
-        { q: "The repetition or near-repetition of words or sounds, like 'goody-goody' or 'zigzag', is:", options: ["Onomatopoeia", "Reduplication", "Compounding", "Blending"], a: 1 },
-        { q: "In Gen Z slang, the word 'FOMO' is formed through which process?", options: ["Compounding", "Clipping", "Initialism", "Borrowing"], a: 2 },
+        // Prepositions of Place (Visuals & Definitions)
+        { q: "According to the material, which preposition is used to show that something is located within the boundaries or confines of a specific place?", options: ["in", "on", "under", "over"], a: 0 },
+        { q: "Which preposition indicates that something is in a position directly above a surface or touching it?", options: ["over", "in", "on", "beside"], a: 2 },
+        { q: "The preposition 'over' is used to indicate:", options: ["A lower position beneath an object", "A higher position, movement across or above something, or a duration of time exceeding a limit", "Something located next to something else", "A position in the middle of two objects"], a: 1 },
+        { q: "What is the opposite of the preposition 'behind', implying a direction or orientation from back to front?", options: ["beside", "between", "in front of", "over"], a: 2 },
+        { q: "Which preposition means 'near,' 'next to,' or 'beside' when referring to location?", options: ["in", "on", "by", "under"], a: 2 },
+        { q: "When an object is in the middle of two or more objects, places, or people, which preposition is used?", options: ["over", "behind", "between", "beside"], a: 2 },
+        { q: "Which preposition indicates that something is at the back or rear of another object or person?", options: ["in front of", "between", "behind", "over"], a: 2 },
+        { q: "In the 'Show and Tell' section, if a dog is beneath the table, which preposition is used?", options: ["on", "in", "under", "over"], a: 2 },
+        { q: "In the memory quiz game, where was the rabbit located?", options: ["Next to the dog", "Behind the cat", "On the sofa", "Under the tree"], a: 3 },
+        { q: "In the memory quiz game, where was the rat located?", options: ["On the fridge", "Between the cheese and the cake", "Behind the cheese", "Under the table"], a: 1 },
+        { q: "In the memory quiz game, where is the crumpled can located?", options: ["On the wall", "Under the chair", "Next to the bin", "In the bin"], a: 2 },
+        { q: "In the memory quiz game, where is the crab located?", options: ["On the umbrella", "In the water", "By the sandcastle", "Under the tree"], a: 2 },
+        { q: "Which preposition denotes that something is beneath or below another object or surface?", options: ["in", "over", "under", "by"], a: 2 },
+        { q: "Which preposition is used to show something is located next to something else?", options: ["beside", "between", "behind", "in front of"], a: 0 },
+        { q: "If the owl is facing you with a box directly at its back, the owl is:", options: ["in the box", "behind the box", "in front of the box", "over the box"], a: 2 },
+        { q: "If the owl is seen popping out from the center of a box, the owl is:", options: ["on the box", "inside the box", "under the box", "beside the box"], a: 1 },
+        { q: "If only the owl's head is visible peeking from the rear of the box, the owl is:", options: ["in front of the box", "between the boxes", "behind the box", "by the box"], a: 2 },
+        { q: "If the owl is lifting a box above its head, the owl is:", options: ["over the box", "under the box", "on the box", "between the boxes"], a: 1 },
+        { q: "If the owl is standing directly atop the closed box, the owl is:", options: ["on the box", "under the box", "in the box", "behind the box"], a: 0 },
+        { q: "If the owl is positioned with one box to its left and another to its right, the owl is:", options: ["in the boxes", "over the boxes", "between the boxes", "by the boxes"], a: 2 },
+        { q: "If the owl is flying in the air higher than the box, the owl is:", options: ["in the box", "above the box", "under the box", "behind the box"], a: 1 },
+        { q: "If the dog is standing atop a table, it is:", options: ["on the table", "in the table", "under the table", "beside the table"], a: 0 },
+        { q: "If the dog is standing on the floor directly next to the table, it is:", options: ["on the table", "in the table", "under the table", "beside the table"], a: 3 },
+        { q: "If the dog is sitting inside an open cardboard box, it is:", options: ["on the box", "over the box", "in the box", "between the boxes"], a: 2 },
+        { q: "If the dog is situated in the space separating a box and a table, it is:", options: ["beside the table", "behind the box", "between the box and the table", "under the table"], a: 2 },
+        { q: "In the preposition examples, if the cat is hiding beneath the box, it is:", options: ["on the box", "over the box", "under the box", "between the boxes"], a: 2 },
+        { q: "In the preposition examples, if a bird is flying across the top of an open box, it is:", options: ["in the box", "over the box", "under the box", "by the box"], a: 1 },
+        { q: "If a cat is positioned directly next to the outer wall of a box, it is:", options: ["between the boxes", "beside the box", "in the box", "over the box"], a: 1 },
+        { q: "If a bird is placed with one box on its left and another on its right, it is:", options: ["beside the boxes", "under the boxes", "between the two boxes", "in front of the boxes"], a: 2 },
+        { q: "If the cat is situated near the box, which preposition can mean 'near,' 'next to,' or 'beside'?", options: ["over", "under", "by", "in"], a: 2 },
+        { q: "In the memory quiz game, where is the cat located?", options: ["Next to the doll", "On the sofa", "In the box", "Under the chair"], a: 1 },
+        { q: "In the memory quiz game, where is the dog located?", options: ["Under the tree", "Next to the ball", "Behind the cat", "In the bin"], a: 1 },
 
-        // Grammatical Categories - Nouns
-        { q: "A grammatical category that refers to names of a person, place, thing, or idea is a:", options: ["Verb", "Adjective", "Noun", "Pronoun"], a: 2 },
-        { q: "Which noun class refers to specific names and is always capitalized?", options: ["Proper Noun", "Common Noun", "Abstract Noun", "Collective Noun"], a: 0 },
-        { q: "'A team of players' or 'A swarm of bees' are examples of which type of noun?", options: ["Concrete Noun", "Abstract Noun", "Collective Noun", "Compound Noun"], a: 2 },
-        { q: "A noun that points to a physical object and can be perceived by the five senses is a:", options: ["Concrete Noun", "Abstract Noun", "Collective Noun", "Common Noun"], a: 0 },
-        { q: "An idea or concept that does not exist in the real world and cannot be touched is an:", options: ["Concrete Noun", "Abstract Noun", "Compound Noun", "Countable Noun"], a: 1 },
-        { q: "'Rainfall' and 'sunflower' are examples of what type of compound noun?", options: ["Open", "Hyphenated", "Closed or solid", "Spaced"], a: 2 },
-        { q: "The compound noun 'mother-in-law' is formed by which combination?", options: ["Noun + Verb", "Noun + Preposition + Noun", "Adjective + Noun", "Preposition + Noun"], a: 1 },
-        { q: "Forming new words by adding a word to the base form (from Latin 'inflectere' meaning to bend) is called:", options: ["Deflection", "Inflection", "Declension", "Derivation"], a: 1 },
-        { q: "Most words that are inflected to reflect tense, mood, aspect, and person are:", options: ["Nouns", "Adjectives", "Verbs", "Pronouns"], a: 2 },
-        { q: "The changing form of a noun or pronoun in English to show number, case, or gender is called:", options: ["Inflection", "Declension", "Conversion", "Modification"], a: 1 },
-        { q: "A property of nouns that classifies them according to sex or whether they are animate/inanimate is:", options: ["Gender", "Case", "Number", "Degree"], a: 0 },
-        { q: "Which case refers to a noun used as the subject of the verb?", options: ["Nominative Case", "Dative Case", "Objective Case", "Possessive Case"], a: 0 },
-        { q: "If a noun receives something or indicates to whom/for whom an action is performed, it is in the:", options: ["Nominative Case", "Dative Case (Indirect Object)", "Objective Case", "Appositive"], a: 1 },
-        { q: "When a noun functions as an object of a verb or preposition (e.g., 'Bella ate an apple'), it is in the:", options: ["Possessive Case", "Accusative/Objective Case", "Predicate Nominative", "Direct Address"], a: 1 },
-        { q: "The case that shows ownership or possession, commonly marked by an apostrophe, is the:", options: ["Possessive Case", "Appositive", "Nominative Case", "Objective Case"], a: 0 },
-        { q: "A noun that follows a linking verb and renames or identifies the subject is a:", options: ["Direct Address", "Object of a Preposition", "Predicate Nominative", "Direct Object"], a: 2 },
-        { q: "A noun that explains, identifies, or renames another noun beside it (e.g., 'My godmother, Kath...') is an:", options: ["Appositive", "Objective Complement", "Predicate Adjective", "Attributive"], a: 0 },
-        { q: "In the sentence 'The book is on the table,' the word 'table' functions as:", options: ["Direct Object", "Object of a Preposition", "Indirect Object", "Appositive"], a: 1 },
-        { q: "A noun used to directly speak to a person or thing (e.g., 'Eli, please close the door.') is called:", options: ["Appositive", "Subject", "Direct Address", "Indirect Object"], a: 2 },
-        { q: "Singular nouns can be made plural by adding 's', 'es', 'ies', or 'ves'. This describes the noun property of:", options: ["Gender", "Case", "Number", "Inflection"], a: 2 },
+        // Prepositions of Time
+        { q: "Which preposition of time is used with specific times and holiday periods (e.g., 7 o'clock, Thanksgiving)?", options: ["in", "on", "at", "by"], a: 2 },
+        { q: "Which preposition of time is used with days and dates (e.g., Wednesday, March 27th)?", options: ["in", "on", "at", "by"], a: 1 },
+        { q: "Which preposition of time is used with months, years, decades, and centuries?", options: ["at", "on", "in", "over"], a: 2 },
+        { q: "Which preposition of time is used with seasons and time periods (e.g., summer, ten minutes)?", options: ["in", "on", "at", "by"], a: 0 },
+        { q: "Based on the rules, what is the correct preposition for the sentence: 'My birthday is ___ January.'?", options: ["at", "on", "in", "by"], a: 2 },
+        { q: "Based on the rules, what is the correct preposition for the sentence: 'She will arrive ___ 8:00AM.'?", options: ["in", "on", "at", "over"], a: 2 },
+        { q: "According to the 'What's Wrong?' slides, what is the correct correction for the sentence 'John's class starts at June.'?", options: ["at to in", "at to on", "at to by", "The sentence is correct"], a: 0 },
+        { q: "'We go to the beach ___ summer.' Which preposition correctly fills the blank?", options: ["at", "on", "in", "by"], a: 2 },
+        { q: "'The exam is ___ the 16th.' Which preposition correctly fills the blank?", options: ["at", "on", "in", "over"], a: 1 },
+        { q: "'The movie starts ___ 8:30.' Which preposition correctly fills the blank?", options: ["at", "on", "in", "by"], a: 0 },
+        { q: "'Shakespeare was born ___ 1564.' Which preposition correctly fills the blank?", options: ["at", "on", "in", "by"], a: 2 },
+        { q: "'He gets up ___ 6 o'clock.' Which preposition correctly fills the blank?", options: ["in", "on", "at", "by"], a: 2 },
+        { q: "'I will visit you ___ Friday.' Which preposition correctly fills the blank?", options: ["at", "on", "in", "by"], a: 1 },
+        { q: "'The Titanic sank ___ 1912.' Which preposition correctly fills the blank?", options: ["at", "on", "in", "over"], a: 2 },
+        { q: "'Her birthday is ___ May 4th.' Which preposition correctly fills the blank?", options: ["at", "on", "in", "by"], a: 1 },
+        { q: "According to the 'What's Wrong?' slides, what is the correct correction for the sentence 'Father will go to Philippines at December.'?", options: ["at to on", "at to in", "at to by", "The sentence is correct"], a: 1 },
+        { q: "According to the 'What's Wrong?' slides, what is the correct correction for 'Mother's meeting is on evening.'?", options: ["on to in", "on to at", "on to by", "The sentence is correct"], a: 0 },
+        { q: "'Come and visit us ___ Thanksgiving.' Which preposition correctly fills the blank?", options: ["in", "on", "at", "by"], a: 2 },
+        { q: "'Where were you ___ Friday?' Which preposition correctly fills the blank?", options: ["in", "on", "at", "by"], a: 1 },
+        { q: "'There were many hippies ___ the '60s.' Which preposition correctly fills the blank?", options: ["at", "on", "in", "by"], a: 2 },
+        { q: "'We are living ___ the 21st century.' Which preposition correctly fills the blank?", options: ["at", "on", "in", "by"], a: 2 },
 
-        // Adjectives
-        { q: "Words used to describe or modify nouns or other substantives are called:", options: ["Verbs", "Nouns", "Adjectives", "Pronouns"], a: 2 },
-        { q: "Adjectives that describe appearance, quality, shape, color, or behavior are classified as:", options: ["Limiting Adjectives", "Descriptive Adjectives", "Pronominal Adjectives", "Numerical Adjectives"], a: 1 },
-        { q: "An adjective formed from a proper noun, like 'Philippine eagle,' is a:", options: ["Common Adjective", "Limiting Adjective", "Proper Adjective", "Predicate Adjective"], a: 2 },
-        { q: "Verb forms that can act as descriptive adjectives (e.g., 'broken heart', 'shooting stars') are:", options: ["Gerunds", "Participles", "Infinitives", "Appositives"], a: 1 },
-        { q: "An adjective placed just before the word it modifies (e.g., 'beautiful dress') is an:", options: ["Attributive Adjective", "Appositive Adjective", "Predicate Adjective", "Objective Complement"], a: 0 },
-        { q: "Adjectives formed in pairs immediately following the word they modify, set off by commas, are:", options: ["Attributive Adjectives", "Predicate Adjectives", "Appositive Adjectives", "Limiting Adjectives"], a: 2 },
-        { q: "Adjectives used as subject complements after linking verbs (am, is, are, was, were) are:", options: ["Predicate Adjectives", "Objective Complements", "Attributive Adjectives", "Articles"], a: 0 },
-        { q: "An adjective that modifies the direct object of the verb (e.g., 'made the patient weak') is an:", options: ["Appositive Adjective", "Objective Complement", "Attributive Adjective", "Predicate Adjective"], a: 1 },
-        { q: "Adjectives that point out or denote the number of an object are called:", options: ["Descriptive Adjectives", "Limiting Adjectives", "Proper Adjectives", "Abstract Adjectives"], a: 1 },
-        { q: "'A', 'an', and 'the' are examples of which type of limiting adjective?", options: ["Numerical", "Articles", "Pronominal", "Possessive"], a: 1 },
-        { q: "Limiting adjectives that denote exact number, rank, or position (e.g., first, three) are:", options: ["Articles", "Numerical Adjectives", "Pronominal Adjectives", "Indefinite Adjectives"], a: 1 },
-        { q: "Personal pronouns in their possessive cases used as modifiers (e.g., 'My daughter') are:", options: ["Numerical Adjectives", "Pronominal Adjectives", "Proper Adjectives", "Articles"], a: 1 },
-        { q: "The degree of comparison that is just the description itself is the:", options: ["Positive degree", "Comparative degree", "Superlative degree", "Infinite degree"], a: 0 },
-        { q: "The degree of comparison used when two persons or things are compared is the:", options: ["Positive degree", "Comparative degree", "Superlative degree", "Extreme degree"], a: 1 },
-        { q: "The degree of comparison used when more than two are compared is the:", options: ["Positive degree", "Comparative degree", "Superlative degree", "Ultimate degree"], a: 2 },
-        { q: "Adjectives of three or more syllables form their comparative and superlative degrees by adding:", options: ["-er and -est", "more and most", "-ier and -iest", "less and least only"], a: 1 },
-        { q: "What is the comparative degree of the irregular adjective 'bad'?", options: ["badder", "baddest", "worse", "worst"], a: 2 },
-        { q: "What is the superlative degree of the irregular adjective 'far' (distance)?", options: ["farer", "farest", "farther", "farthest"], a: 3 },
-        { q: "Some adjectives do not have comparative degrees because their meaning is absolute. Which of the following is one?", options: ["hungry", "slow", "dead", "beautiful"], a: 2 },
-        { q: "In the order of descriptive adjectives in a series, which comes first?", options: ["Quality", "Size", "Shape", "Color"], a: 1 },
+        // Adverbs
+        { q: "According to the material, most adverbs tell you how, where, or when something is done. They describe the manner, place, or time of an action.", options: ["True", "False", "Only manner", "Only time"], a: 0 },
+        { q: "Many adverbs end with '-ly', which are made by adding '-ly' to:", options: ["Nouns", "Verbs", "Adjectives", "Pronouns"], a: 2 },
+        { q: "Which of the following words ends in '-ly' but is an adjective, NOT an adverb, according to the examples provided?", options: ["Correctly", "Carelessly", "Safely", "Lonely"], a: 3 },
+        { q: "An adverb of manner describes:", options: ["Where an action is done", "In which manner an action is done", "When an action is done", "How many times an action is done"], a: 1 },
+        { q: "In the sentence 'The plane landed safely,' what kind of adverb is 'safely'?", options: ["Adverb of Time", "Adverb of Place", "Adverb of Manner", "Adverb of Frequency"], a: 2 },
+        { q: "Which kind of adverb shows how many times an action is done?", options: ["Adverb of Degree", "Adverb of Frequency", "Adverb of Purpose/Reason", "Adverb of Time"], a: 1 },
+        { q: "In the sentence 'He is hence unable to refute the charge,' the word 'hence' is an adverb of:", options: ["Manner", "Frequency", "Degree", "Purpose/Reason"], a: 3 },
+        { q: "'The sea is very stormy.' What kind of adverb is 'very'?", options: ["Degree", "Affirmation/Negation", "Place", "Time"], a: 0 },
+        { q: "Which of the following is an example of an Adverb of Affirmation/Negation?", options: ["Surely you are mistaken.", "He was driving carelessly.", "We moved into our new house last week.", "The tortoise walks slowly."], a: 0 },
+        { q: "Which kind of adverb describes where an action is done?", options: ["Manner", "Place", "Time", "Degree"], a: 1 },
+        { q: "'I've lived here for about two years.' The word 'here' is an example of an adverb of:", options: ["Manner", "Time", "Place", "Frequency"], a: 2 },
+        { q: "'We moved into our new house last week.' The phrase 'last week' functions as an adverb of:", options: ["Degree", "Place", "Time", "Affirmation"], a: 2 },
+        { q: "'He was too careless.' The word 'too' is an example of an adverb of:", options: ["Affirmation", "Degree", "Manner", "Purpose"], a: 1 },
+        { q: "Which sentence contains an adverb of Affirmation/Negation?", options: ["The plane landed safely.", "Dad polishes his shoes twice a week.", "I don't know.", "Is Eli still in bed?"], a: 2 },
+        { q: "In the sentence 'The tortoise walks slowly.' What kind of adverb is 'slowly'?", options: ["Adverb of Time", "Adverb of Place", "Adverb of Manner", "Adverb of Degree"], a: 2 },
+        { q: "The sentence 'Is Eli still in bed?' contains an example of an Adverb of:", options: ["Time", "Degree", "Frequency", "Place"], a: 3 },
+        { q: "The sentence 'The train has already left.' contains an example of an Adverb of:", options: ["Manner", "Place", "Time", "Frequency"], a: 2 },
+        { q: "In the sentence 'Dad polishes his shoes twice a week,' what kind of adverb is 'twice a week'?", options: ["Adverb of Degree", "Adverb of Frequency", "Adverb of Time", "Adverb of Purpose"], a: 1 },
+        { q: "The sentence 'These mangos are almost ripe,' contains an example of an Adverb of:", options: ["Place", "Time", "Degree", "Manner"], a: 2 },
 
-        // Subject-Verb Agreement Rules
-        { q: "The fundamental rule of Subject-Verb Agreement is that subjects and verbs must always agree in:", options: ["Gender", "Case", "Number", "Tense"], a: 2 },
-        { q: "When two or more subjects are joined by 'and', what form should the verb generally take?", options: ["A verb form ending in 's'", "A verb form without an 's'", "Past tense only", "A gerund form"], a: 1 },
-        { q: "When a subject is modified by the words 'each' or 'every', which of the following is true?", options: ["It takes a singular verb", "It takes a plural verb without an 's'", "It requires a gerund", "The verb form depends on the closest subject"], a: 0 },
-        { q: "When plural subjects are joined by 'or', 'nor', or 'but', how is the verb's form determined?", options: ["It is always plural", "It always takes an 's'", "It agrees with the subject closest to it", "It agrees with the first subject in the sentence"], a: 2 },
-        { q: "How should verbs agree with indefinite pronouns like 'everyone' or 'everything'?", options: ["They take a plural verb", "They take a singular verb", "They require past tense", "It depends on the prepositional phrase"], a: 1 },
-        { q: "To find the proper subject of a verb, you must remember that the subject is never located in a:", options: ["dependent clause", "prepositional or verbal phrase", "independent clause", "direct quotation"], a: 1 },
-        { q: "For indefinite pronouns related to amount (all, half, some, none), how do you determine whether the verb should be singular or plural?", options: ["They are always singular", "They are always plural", "By looking at the object of the prepositional phrase", "By looking at the main verb's tense"], a: 2 },
-        { q: "If a collective noun like 'family' or 'team' is used as the subject, what form does the verb typically take?", options: ["Singular form (ending in 's')", "Plural form (without an 's')", "Gerund form", "Infinitive form"], a: 0 },
-        { q: "How are nouns like 'economics', 'mumps', or 'news' treated in subject-verb agreement?", options: ["As plural subjects", "As singular subjects", "As uncountable plurals", "As collective nouns"], a: 1 },
-        { q: "When the subject refers to a unit of measurement (time, distance, money), the verb should be:", options: ["Plural", "Singular", "Infinite", "Compound"], a: 1 },
-        { q: "In sentences that begin with 'there' or 'here', where is the subject usually located?", options: ["At the very beginning", "Inside a prepositional phrase", "After the verb", "At the very end of the sentence"], a: 2 },
-        { q: "When gerunds ('ing' words) are used as subjects, they are treated as:", options: ["Plural subjects", "Singular subjects", "Adjectives", "Verbs"], a: 1 },
-        { q: "When using relative pronouns (who, that, which) as a subject, what determines if the verb should be singular or plural?", options: ["The verb itself", "The noun the pronoun refers to", "The preposition", "The sentence structure"], a: 1 },
-        { q: "The phrase 'The number' followed by a prepositional phrase requires what kind of verb?", options: ["Plural verb", "Singular verb", "Future tense verb", "Past tense verb"], a: 1 },
-        { q: "The phrase 'A number' followed by a prepositional phrase requires what kind of verb?", options: ["Plural verb", "Singular verb", "Future tense verb", "Past tense verb"], a: 0 },
-        { q: "Which of the following sentences is grammatically correct?", options: ["Jan, John, and Bob walks to the store.", "Jan, John, and Bob walk to the store.", "Jan and Bob is walking.", "John and Bob has walked."], a: 1 },
-        { q: "Which of the following sentences is grammatically correct?", options: ["Every flower bloom beautifully.", "Each boy and girl walk to the store.", "Every flower blooms beautifully.", "Each of the boys run."], a: 2 },
-        { q: "Which of the following sentences is grammatically correct?", options: ["Neither Bob nor his friends walks to the store.", "Either Andrew or his friend walk to the store.", "Neither Bob nor his friends walk to the store.", "Either the boys or the girl walk to the store."], a: 2 },
-        { q: "Which of the following sentences is grammatically correct?", options: ["The news surprise everyone.", "Economics are her favorite subject.", "Economics is her favorite subject.", "Mumps are a dangerous disease."], a: 2 },
-        { q: "Which of the following sentences is grammatically correct?", options: ["Ten pounds of chocolate are too much.", "Thirteen feet of kite string tangle easily.", "Ten pounds of chocolate is too much.", "Fifty dollars are a lot of money."], a: 2 }
+        // English Tenses Chart
+        { q: "According to the English Tenses Chart, what is the structure for the Present Continuous tense?", options: ["subject + base verb", "subject + be (present) + present participle", "subject + have/has + past participle", "subject + will + be + present participle"], a: 1 },
+        { q: "'I had walked' is an example of which tense?", options: ["Present Perfect", "Past Perfect", "Future Perfect", "Past Simple"], a: 1 },
+        { q: "What is the structure for the Future Perfect Continuous tense?", options: ["subject + will + have + been + present participle", "subject + had + been + present participle", "subject + have/has + been + present participle", "subject + will + have + past participle"], a: 0 },
+        { q: "Which sentence is an example of the Present Perfect Continuous tense?", options: ["I was walking.", "I have walked.", "I have been walking.", "I will be walking."], a: 2 },
+        { q: "How do you form a negative sentence in the Past Simple tense according to the chart?", options: ["I haven't walked.", "I didn't walk.", "I wasn't walking.", "I won't walk."], a: 1 },
+        { q: "What is the question form for the Future Simple tense?", options: ["Did you walk?", "Have you walked?", "Will you walk?", "Are you walking?"], a: 2 },
+        { q: "According to the English Tenses Chart, what is the formula for the Past Continuous tense?", options: ["subject + be (past) + present participle", "subject + past tense verb", "subject + had + past participle", "subject + will + be + present participle"], a: 0 },
+        { q: "'You haven't walked. / He hasn't walked.' are negative examples of which tense?", options: ["Present Simple", "Past Perfect", "Future Perfect", "Present Perfect"], a: 3 }
     ];
 
-    let questionOrder = Array.from({length: 80}, (_, i) => i + 1);
+    let questionOrder = Array.from({length: quizData.length}, (_, i) => i + 1);
 
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
@@ -559,11 +705,16 @@
 
     function submitQuiz() {
         const container = document.getElementById('quiz-container');
-        
         if (container.classList.contains('submitted')) return;
         
         container.classList.add('submitted');
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
         finalScore = 0;
+        const totalQuestions = quizData.length;
 
         for (let i = 0; i < questionOrder.length; i++) {
             let qNum = questionOrder[i];
@@ -594,23 +745,21 @@
             }
         }
         
-        // Hide Submit button and show Score in footer
         document.getElementById('submit-btn').style.display = 'none';
-        document.getElementById('score-display').innerText = `Final Score: ${finalScore} / 80`;
+        document.getElementById('score-display').innerText = `Final Score: ${finalScore} / ${totalQuestions}`;
+        logToConsole(`Quiz Submitted! Final Score: ${finalScore}/${totalQuestions}`, 'log-system');
 
-        // Trigger Results Screen Animation
-        const percentage = (finalScore / 80) * 100;
+        const percentage = (finalScore / totalQuestions) * 100;
         const resultsScreen = document.getElementById('results-screen');
         const scorePath = document.getElementById('score-path');
         const scoreText = document.getElementById('score-text');
         const scoreMessage = document.getElementById('score-message');
         
-        // Reset state
         scorePath.setAttribute('stroke-dasharray', `0, 100`);
-        scoreText.textContent = `0 / 80`;
+        scoreText.textContent = `0 / ${totalQuestions}`;
         resultsScreen.classList.add('show');
         
-        if (finalScore >= 40) {
+        if (finalScore >= (totalQuestions / 2)) {
             scoreMessage.innerText = "Di kana tres!";
             scorePath.classList.add('pass');
             scorePath.classList.remove('fail');
@@ -621,33 +770,26 @@
         }
 
         setTimeout(() => {
-            // Animate SVG stroke
             scorePath.setAttribute('stroke-dasharray', `${percentage}, 100`);
-            
-            // Advanced requestAnimationFrame easing for perfect number sync
             const duration = 1500;
             const startTimestamp = performance.now();
             
             const animateNumber = (timestamp) => {
                 const elapsed = timestamp - startTimestamp;
                 const progress = Math.min(elapsed / duration, 1);
-                
-                // EaseOut cubic formula to match CSS cubic-bezier roughly
                 const easeOut = (t) => 1 - Math.pow(1 - t, 3);
                 const currentScore = Math.floor(easeOut(progress) * finalScore);
                 
-                scoreText.textContent = `${currentScore} / 80`;
+                scoreText.textContent = `${currentScore} / ${totalQuestions}`;
                 
                 if (progress < 1) {
                     requestAnimationFrame(animateNumber);
                 } else {
-                    scoreText.textContent = `${finalScore} / 80`;
+                    scoreText.textContent = `${finalScore} / ${totalQuestions}`;
                 }
             };
             
-            if (finalScore > 0) {
-                requestAnimationFrame(animateNumber);
-            }
+            if (finalScore > 0) requestAnimationFrame(animateNumber);
         }, 300);
     }
 
@@ -669,8 +811,271 @@
         }
     }
 
-    // Init
+    // --- Console UI & Logic ---
+    function toggleConsole() {
+        const panel = document.getElementById('console-panel');
+        const toggleBtn = document.getElementById('console-toggle');
+        panel.classList.toggle('open');
+        toggleBtn.innerText = panel.classList.contains('open') ? '⟩' : '⟨';
+    }
+
+    function logToConsole(message, typeClass = '') {
+        const output = document.getElementById('console-output');
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${typeClass}`;
+        entry.innerText = message;
+        output.appendChild(entry);
+        output.scrollTop = output.scrollHeight;
+    }
+
+    // Listen for option selections via Event Delegation
+    document.getElementById('quiz-container').addEventListener('change', function(e) {
+        if (e.target.tagName === 'INPUT' && e.target.type === 'radio') {
+            let qNum = e.target.name.substring(1);
+            let selectedVal = e.target.value;
+            let correctVal = document.getElementById('a' + qNum).value;
+            let labels = ["A", "B", "C", "D"];
+            let isCorrect = (String(selectedVal) === String(correctVal));
+            
+            // Find visual question number based on DOM position
+            let questionBlock = document.getElementById('qb-' + qNum);
+            let visualNum = Array.from(document.querySelectorAll('.question-block')).indexOf(questionBlock) + 1;
+            
+            logToConsole(`[Click] Q${visualNum}: Selected Option ${labels[selectedVal]} - ${isCorrect ? 'Correct Variable Hash 1' : 'Invalid Variable Hash 1'}`, isCorrect ? 'log-success' : 'log-error');
+        }
+    });
+
+    // Command Processor
+    document.getElementById('console-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const cmd = this.value.trim();
+            if (!cmd) return;
+            
+            this.value = '';
+            logToConsole(`> ${cmd}`, 'log-command');
+            
+            const commandStr = cmd.toLowerCase();
+            const isSubmitted = document.getElementById('quiz-container').classList.contains('submitted');
+            
+            if (isSubmitted && commandStr !== '// reshuffle') {
+                logToConsole('Quiz already submitted. Reshuffle to use commands.', 'log-error');
+                return;
+            }
+
+            if (commandStr === '// reveal') {
+                document.querySelectorAll('.option').forEach(opt => opt.classList.remove('revealed-correct'));
+                for (let i = 0; i < questionOrder.length; i++) {
+                    let qNum = questionOrder[i];
+                    let correctIndex = document.getElementById('a' + qNum).value;
+                    let correctLabel = document.getElementById(`label-q${qNum}-opt${correctIndex}`);
+                    if(correctLabel) correctLabel.classList.add('revealed-correct');
+                }
+                logToConsole('Correct exef 5 vlaue hash=000000.', 'log-system');
+            } 
+            else if (commandStr === '// correct all') {
+                for (let i = 0; i < questionOrder.length; i++) {
+                    let qNum = questionOrder[i];
+                    let correctIndex = document.getElementById('a' + qNum).value;
+                    let radio = document.querySelector(`input[name="q${qNum}"][value="${correctIndex}"]`);
+                    if(radio) radio.checked = true;
+                }
+                logToConsole('Correct exef 4 vlaue hash=000000.', 'log-system');
+            }
+            else if (commandStr === '// wrong all') {
+                for (let i = 0; i < questionOrder.length; i++) {
+                    let qNum = questionOrder[i];
+                    let correctIndex = parseInt(document.getElementById('a' + qNum).value);
+                    let wrongIndex = (correctIndex + 1) % 4; // Safely shift to a wrong option
+                    // fallback if options are less than 4 for a question
+                    let radio = document.querySelector(`input[name="q${qNum}"][value="${wrongIndex}"]`);
+                    if(!radio) radio = document.querySelector(`input[name="q${qNum}"][value="0"]`);
+                    if(radio && radio.value == correctIndex) radio = document.querySelector(`input[name="q${qNum}"][value="1"]`);
+                    if(radio) radio.checked = true;
+                }
+                logToConsole('Invalid Ans Exef 2.', 'log-system');
+            }
+            else if (commandStr === '// reshuffle') {
+                logToConsole('Reshuffling Command Execute 01 variable 1 exef 2', 'log-system');
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    document.getElementById('timer-display').classList.remove('active');
+                }
+                reshuffleQuiz();
+                logToConsole('Quiz reshuffled successfully.', 'log-system');
+            }
+            else if (commandStr.startsWith('// set timer')) {
+                const match = commandStr.match(/^\/\/\s*set\s*timer\s*\(?\s*(\d+)\s*\)?$/i);
+                if (match && match[1]) {
+                    let secs = parseInt(match[1]);
+                    if (secs >= 1 && secs <= 1200) {
+                        startTimer(secs);
+                        logToConsole(`Timer set and started for ${secs} seconds.`, 'log-system');
+                    } else {
+                        logToConsole('Timer limit must be between 1 and 1200 seconds.', 'log-error');
+                    }
+                } else {
+                    logToConsole('Invalid timer format. Example: // set timer (60)', 'log-error');
+                }
+            } 
+            else {
+                logToConsole('Unknown command. Available: // reveal, // correct all, // wrong all, // reshuffle, // set timer (sec)', 'log-error');
+            }
+        }
+    });
+
+    // --- Timer Logic ---
+    let timerInterval = null;
+    let timerSeconds = 0;
+    
+    function startTimer(seconds) {
+        const timerUI = document.getElementById('timer-display');
+        if (timerInterval) clearInterval(timerInterval);
+        timerSeconds = seconds;
+        updateTimerUI();
+        timerUI.classList.add('active');
+        
+        timerInterval = setInterval(() => {
+            timerSeconds--;
+            updateTimerUI();
+            if (timerSeconds <= 0) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                timerUI.classList.remove('active');
+                logToConsole('Times up 00000', 'log-system');
+                submitQuiz();
+            }
+        }, 1000);
+    }
+
+    function updateTimerUI() {
+        const timerUI = document.getElementById('timer-display');
+        if (timerSeconds < 0) return;
+        let m = Math.floor(timerSeconds / 60);
+        let s = timerSeconds % 60;
+        timerUI.innerText = `⏱ ${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // Init System Message
+    logToConsole('CMD000000...', 'log-system');
+    logToConsole(':log comman console print;;');
+
+    // --- Command Autocomplete ---
+    const CONSOLE_COMMANDS = [
+        { cmd: '// reveal', desc: 'show correct answers' },
+        { cmd: '// correct all', desc: 'select all correct' },
+        { cmd: '// wrong all', desc: 'select all wrong' },
+        { cmd: '// reshuffle', desc: 'shuffle questions' },
+        { cmd: '// set timer (60)', desc: 'e.g. // set timer (60)' }
+        
+    ];
+
+    const cmdInput = document.getElementById('console-input');
+    const suggestBox = document.createElement('div');
+    suggestBox.id = 'cmd-suggest';
+    document.getElementById('console-input-container').appendChild(suggestBox);
+
+    let currentMatches = [];
+    let suggestIndex = 0;
+
+    function renderSuggestions() {
+        if (!currentMatches.length) {
+            suggestBox.style.display = 'none';
+            suggestBox.innerHTML = '';
+            return;
+        }
+        suggestBox.innerHTML = currentMatches.map((c, i) =>
+            `<div class="cmd-item ${i === suggestIndex ? 'active' : ''}" data-i="${i}">
+                <span>${c.cmd}</span><small>${c.desc}</small>
+            </div>`
+        ).join('');
+        suggestBox.style.display = 'block';
+    }
+
+    function updateSuggestions() {
+        const val = cmdInput.value.trim().toLowerCase();
+        currentMatches = val.startsWith('/')
+            ? CONSOLE_COMMANDS.filter(c => c.cmd.startsWith(val) && c.cmd !== val)
+            : [];
+        suggestIndex = 0;
+        renderSuggestions();
+    }
+
+    function acceptSuggestion(i) {
+        cmdInput.value = currentMatches[i].cmd;
+        currentMatches = [];
+        renderSuggestions();
+        cmdInput.focus();
+    }
+
+    cmdInput.addEventListener('input', updateSuggestions);
+
+    cmdInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            currentMatches = [];
+            renderSuggestions();
+            return;
+        }
+        if (!currentMatches.length) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            suggestIndex = (suggestIndex + 1) % currentMatches.length;
+            renderSuggestions();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            suggestIndex = (suggestIndex - 1 + currentMatches.length) % currentMatches.length;
+            renderSuggestions();
+        } else if (e.key === 'Tab') {
+            e.preventDefault();
+            acceptSuggestion(suggestIndex);
+        } else if (e.key === 'Escape') {
+            currentMatches = [];
+            renderSuggestions();
+        }
+    });
+
+    suggestBox.addEventListener('mousedown', function (e) {
+        const item = e.target.closest('.cmd-item');
+        if (item) {
+            e.preventDefault();
+            acceptSuggestion(Number(item.dataset.i));
+        }
+    });
+
+    // Init Quiz
     renderQuiz();
+    function resetEverything() {
+    // Stop the timer
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    timerSeconds = 0;
+    document.getElementById('timer-display').classList.remove('active');
+
+    // Close the results overlay
+    document.getElementById('results-screen').classList.remove('show');
+
+    // Restore original question order and rebuild the quiz (clears answers and submitted state)
+    questionOrder = Array.from({ length: quizData.length }, (_, i) => i + 1);
+    finalScore = 0;
+    renderQuiz();
+
+    // Switch back to light mode
+    document.body.classList.remove('dark-mode');
+    const themeToggle = document.getElementById('theme-toggle');
+    themeToggle.innerHTML = 'Toggle Dark Mode 🌙';
+    themeToggle.setAttribute('title', 'Toggle Dark Mode');
+
+    // Clear the console and print the startup messages again
+    document.getElementById('console-output').innerHTML = '';
+    logToConsole('CMD000000...', 'log-system');
+    logToConsole(':log comman console print;;');
+    logToConsole('Reset complete.', 'log-system');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 </script>
 
 </body>
